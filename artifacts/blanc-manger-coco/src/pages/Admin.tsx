@@ -62,6 +62,9 @@ export default function Admin() {
   const [changePwd, setChangePwd] = useState(false);
   const [newPwd, setNewPwd] = useState("");
   const [pwdMsg, setPwdMsg] = useState("");
+  const [changeUsernameOpen, setChangeUsernameOpen] = useState(false);
+  const [newAdminName, setNewAdminName] = useState(() => sessionStorage.getItem("bmc_admin_name") || "");
+  const [usernameMsg, setUsernameMsg] = useState("");
 
   const logout = () => {
     sessionStorage.removeItem("bmc_admin_token");
@@ -88,6 +91,7 @@ export default function Admin() {
         sessionStorage.setItem("bmc_admin_name", data.username);
         setToken(data.token);
         setAdminName(data.username);
+        setNewAdminName(data.username);
       }
     } catch {
       setLoginError("Impossible de contacter le serveur.");
@@ -96,9 +100,9 @@ export default function Admin() {
     }
   };
 
-  const loadQuestions = useCallback(async () => {
+  const loadQuestions = useCallback(async (showSpinner = true) => {
     if (!token) return;
-    setLoading(true);
+    if (showSpinner) setLoading(true);
     setError("");
     try {
       const res = await apiFetch("/questions", token);
@@ -108,13 +112,13 @@ export default function Admin() {
     } catch {
       setError("Erreur de chargement des questions.");
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   }, [token]);
 
-  const loadAnswers = useCallback(async () => {
+  const loadAnswers = useCallback(async (showSpinner = true) => {
     if (!token) return;
-    setLoading(true);
+    if (showSpinner) setLoading(true);
     setError("");
     try {
       const res = await apiFetch("/answers", token);
@@ -124,15 +128,16 @@ export default function Admin() {
     } catch {
       setError("Erreur de chargement des réponses.");
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
     if (!token) return;
-    if (tab === "questions") loadQuestions();
-    else loadAnswers();
-  }, [token, tab, loadQuestions, loadAnswers]);
+    setLoading(true);
+    setError("");
+    Promise.all([loadQuestions(false), loadAnswers(false)]).finally(() => setLoading(false));
+  }, [token, loadQuestions, loadAnswers]);
 
   const addQuestion = async () => {
     if (!token || !newQText.trim()) return;
@@ -226,12 +231,30 @@ export default function Admin() {
     }
   };
 
+  const changeUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUsernameMsg("");
+    if (!token) return;
+    const res = await apiFetch("/change-username", token, {
+      method: "POST",
+      body: JSON.stringify({ username: newAdminName }),
+    });
+    const d = await res.json();
+    if (res.ok) {
+      sessionStorage.setItem("bmc_admin_name", d.username);
+      setAdminName(d.username);
+      setNewAdminName(d.username);
+      setUsernameMsg("Pseudo changé avec succès !");
+    } else {
+      setUsernameMsg(d.error || "Erreur.");
+    }
+  };
+
   if (!token) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
-          <h1 className="text-2xl font-bold text-rose-600 mb-1 text-center">Administration</h1>
-          <p className="text-gray-500 text-sm text-center mb-6">Blanc Manger Coco</p>
+          <h1 className="text-2xl font-bold text-rose-600 mb-6 text-center">Administration</h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Pseudo</label>
@@ -286,11 +309,21 @@ export default function Admin() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-rose-600">BMC Admin</h1>
+          <h1 className="text-lg font-bold text-rose-600">Administration</h1>
           <span className="text-gray-400 text-sm">·</span>
           <span className="text-gray-600 text-sm">{adminName}</span>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setChangeUsernameOpen(!changeUsernameOpen);
+              setNewAdminName(adminName);
+              setUsernameMsg("");
+            }}
+            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100"
+          >
+            Changer le pseudo
+          </button>
           <button
             onClick={() => setChangePwd(!changePwd)}
             className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100"
@@ -308,6 +341,24 @@ export default function Admin() {
           </button>
         </div>
       </header>
+
+      {changeUsernameOpen && (
+        <div className="bg-rose-50 border-b border-rose-200 px-4 py-3">
+          <form onSubmit={changeUsername} className="flex items-center gap-3 max-w-xl">
+            <input
+              type="text"
+              value={newAdminName}
+              onChange={e => setNewAdminName(e.target.value)}
+              placeholder="Nouveau pseudo admin"
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+            <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
+              Changer
+            </button>
+            {usernameMsg && <span className="text-sm text-gray-600">{usernameMsg}</span>}
+          </form>
+        </div>
+      )}
 
       {changePwd && (
         <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
