@@ -39,7 +39,7 @@ app.use("/api", router);
 const frontendDist = path.resolve(__dirname, "../../blanc-manger-coco/dist/public");
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
-  app.get("*", (_req, res) => {
+  app.get("/{*splat}", (_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
