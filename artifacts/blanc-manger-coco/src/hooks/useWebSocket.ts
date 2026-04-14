@@ -136,9 +136,7 @@ export function useWebSocket() {
 
   const getWsUrl = () => {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
-    const port = window.location.port || "80";
-    return `${proto}//${host}:${port}/ws`;
+    return `${proto}//${window.location.host}/ws`;
   };
 
   const connect = useCallback(() => {
