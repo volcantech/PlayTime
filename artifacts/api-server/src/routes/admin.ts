@@ -162,4 +162,23 @@ router.post("/change-password", requireAuth, async (req: any, res) => {
   return res.json({ success: true });
 });
 
+router.post("/change-username", requireAuth, async (req: any, res) => {
+  const { username } = req.body;
+  if (!username || typeof username !== "string" || username.trim().length < 3) {
+    return res.status(400).json({ error: "Le pseudo doit faire au moins 3 caractères." });
+  }
+  const nextUsername = username.trim();
+  const existingAdmins = await db.select().from(adminsTable).where(eq(adminsTable.username, nextUsername));
+  if (existingAdmins.some((admin) => admin.id !== req.adminId)) {
+    return res.status(409).json({ error: "Ce pseudo est déjà utilisé." });
+  }
+  const [updated] = await db
+    .update(adminsTable)
+    .set({ username: nextUsername })
+    .where(eq(adminsTable.id, req.adminId))
+    .returning();
+  if (!updated) return res.status(404).json({ error: "Administrateur introuvable." });
+  return res.json({ success: true, username: updated.username });
+});
+
 export default router;
