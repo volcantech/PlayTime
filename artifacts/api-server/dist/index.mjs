@@ -61299,6 +61299,20 @@ router2.post("/change-password", requireAuth, async (req, res) => {
   await db.update(adminsTable).set({ codeHash }).where(eq(adminsTable.id, req.adminId));
   return res.json({ success: true });
 });
+router2.post("/change-username", requireAuth, async (req, res) => {
+  const { username } = req.body;
+  if (!username || typeof username !== "string" || username.trim().length < 3) {
+    return res.status(400).json({ error: "Le pseudo doit faire au moins 3 caract\xE8res." });
+  }
+  const nextUsername = username.trim();
+  const existingAdmins = await db.select().from(adminsTable).where(eq(adminsTable.username, nextUsername));
+  if (existingAdmins.some((admin) => admin.id !== req.adminId)) {
+    return res.status(409).json({ error: "Ce pseudo est d\xE9j\xE0 utilis\xE9." });
+  }
+  const [updated] = await db.update(adminsTable).set({ username: nextUsername }).where(eq(adminsTable.id, req.adminId)).returning();
+  if (!updated) return res.status(404).json({ error: "Administrateur introuvable." });
+  return res.json({ success: true, username: updated.username });
+});
 var admin_default = router2;
 
 // src/routes/index.ts
