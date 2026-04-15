@@ -224,25 +224,7 @@ export function PetitBac({ room, playerId, send, error, onLeave }: Props) {
             Trouve le plus vite un mot pour chaque catégorie !
           </p>
         </div>
-
-        <div className="bg-white/10 backdrop-blur rounded-2xl p-5 w-full max-w-sm mb-4 text-center border border-white/10">
-          <p className="text-xs font-bold text-teal-200 uppercase tracking-widest mb-1">
-            Code de la salle
-          </p>
-          <div className="text-5xl font-black tracking-[0.35em] text-white mb-3">
-            {room.code}
-          </div>
-          <button
-            onClick={copyLink}
-            className="w-full py-2.5 rounded-xl font-bold text-sm bg-teal-500 hover:bg-teal-400 text-white transition-colors"
-          >
-            {copied ? "✅ Lien copié !" : "🔗 Copier le lien d'invitation"}
-          </button>
-          <p className="text-xs text-gray-400 text-center mt-2">
-            Partage ce lien pour inviter des amis
-          </p>
-        </div>
-
+        
         <div className="bg-white/10 backdrop-blur rounded-2xl p-5 w-full max-w-sm mb-4 border border-white/10">
           <p className="text-xs font-bold text-teal-200 uppercase tracking-widest mb-3">
             Joueurs ({room.players.length}/10)
